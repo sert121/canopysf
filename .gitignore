@@ -1,0 +1,7 @@
+node_modules
+dist
+pipeline/raw
+.DS_Store
+.vercel
+__pycache__
+*.pyc

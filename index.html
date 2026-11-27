@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Canopy" />
+<meta name="format-detection" content="telephone=no" />
+<title>Canopy</title>
+<meta name="description" content="An open 3D world of San Francisco's trees and streets. Walk the city and meet all 194,000+ surveyed street trees, mapped to their real GPS positions." />
+<meta property="og:title" content="Canopy" />
+<meta property="og:description" content="A map of every tree catalogued along the streets of San Francisco." />
+<meta name="theme-color" content="#1f2a33" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f3ead8'/%3E%3Cpath d='M32 10c-11 0-18 8-18 17 0 8 6 13 13 14v13h10V41c7-1 13-6 13-14 0-9-7-17-18-17z' fill='%23d9663a'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<!-- title -->
+<section id="title">
+  <div class="t-inner">
+    <div class="t-kicker">An open world of San Francisco</div>
+    <h1 class="t-word">Canopy</h1>
+    <p class="t-blurb">A map of <b id="t-count">194,000</b> trees catalogued over all streets in SF.</p>
+    <div class="t-load"><div class="t-bar"><i id="t-prog"></i></div><span id="t-status">Gathering seeds…</span></div>
+    <div class="t-actions">
+      <button id="t-walk" class="btn primary" disabled>Begin walking</button>
+      <button id="t-fly" class="btn ghost" disabled>Fly in</button>
+      <button id="t-map" class="btn ghost" disabled>Browse the map</button>
+    </div>
+    <div class="t-keys"><span><kbd>WASD</kbd> walk</span><span><kbd>Shift</kbd> hurry</span><span><kbd>F</kbd> fly</span><span><kbd>Click</kbd> a tree</span><span><kbd>M</kbd> map</span><span><kbd>J</kbd> journal</span><span><kbd>/</kbd> search</span></div>
+    <div class="t-touch">Left thumb to walk · drag to look · tap any tree</div>
+  </div>
+  <footer class="t-credits">Street trees: SF Public Works via DataSF · Streets, buildings &amp; parks: © OpenStreetMap contributors · Elevation: SF elevation contours (DataSF) · Park forests are approximate stands</footer>
+</section>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div id="compass"><div id="compass-strip"></div><i id="compass-mark"></i><div id="compass-track"></div></div>
+  <div id="where"><div id="where-nh">—</div><div id="where-sub">—</div></div>
+  <div id="tools">
+    <button data-act="search" title="Search species (/)"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg></button>
+    <button data-act="map" title="Map (M)"><svg viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg></button>
+    <button data-act="journal" title="Journal (J)"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg><em id="j-count">0</em></button>
+    <button data-act="sky" title="Light (T)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></button>
+    <button data-act="sound" title="Sound"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="wave" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg></button>
+    <button data-act="settings" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button>
+    <button data-act="help" title="Controls (H)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/></svg></button>
+  </div>
+  <div id="minimap"><canvas id="mm" width="380" height="380"></canvas><i class="mm-n">N</i></div>
+  <div id="crosshair"></div>
+  <div id="hover"></div>
+  <div id="tracking" class="hidden"><span class="tr-dot"></span><span id="tr-text"></span><button id="tr-go">Go</button><button id="tr-x" title="Stop tracking">×</button></div>
+  <div id="resume" class="hidden">Drag to look · click a tree · WASD to walk · Esc for the map</div>
+  <div id="mode-pill" class="hidden">Flying · <kbd>Space</kbd>/<kbd>C</kbd> up/down · <kbd>F</kbd> land</div>
+  <div id="hint"></div>
+  <div id="kpad" class="dpad wasd" aria-label="Move">
+    <button data-k="KeyW" class="u">W</button><button data-k="KeyA" class="l">A</button><button data-k="KeyS" class="d">S</button><button data-k="KeyD" class="r">D</button>
+    <button data-k="ShiftLeft" class="sh">Shift</button><button data-k="Space" class="sp">Space</button>
+  </div>
+  <div id="tctl" aria-label="Touch controls">
+    <button id="tc-fly" title="Fly / walk">Fly</button>
+    <button id="tc-up" class="fly-only" title="Climb">▲</button>
+    <button id="tc-down" class="fly-only" title="Descend">▼</button>
+    <button id="tc-jump" class="walk-only" title="Jump">⤒</button>
+  </div>
+  <div id="toasts"></div>
+</div>
+
+<!-- tree card -->
+<aside id="card" class="hidden" aria-live="polite"></aside>
+
+<!-- overlays -->
+<section id="bigmap" class="overlay hidden">
+  <canvas id="bm"></canvas>
+  <div class="bm-side">
+    <h2>Tree map</h2>
+    <div class="bm-search"><input id="bm-q" placeholder="Search a tree, street or neighborhood" autocomplete="off" /></div>
+    <div id="bm-results"></div>
+    <div id="bm-filterbox" class="hidden"><span>Showing</span> <b id="bm-filtername"></b><button id="bm-clear">Show all trees</button></div>
+    <p id="bm-count" class="muted"></p>
+    <h3>Places</h3>
+    <div id="bm-places"></div>
+  </div>
+  <div id="bm-pad" class="dpad" aria-label="Pan the map">
+    <button data-k="ArrowUp" class="u" title="North (W / ↑)">▲</button><button data-k="ArrowLeft" class="l" title="West (A / ←)">◀</button>
+    <button data-k="ArrowRight" class="r" title="East (D / →)">▶</button><button data-k="ArrowDown" class="d" title="South (S / ↓)">▼</button>
+  </div>
+  <div class="bm-zoom"><button id="bm-zin" title="Zoom in">+</button><button id="bm-zout" title="Zoom out">−</button><button id="bm-me" title="Where I am">◉</button></div>
+  <button class="close" data-close>Back to walking <kbd>M</kbd></button>
+  <div id="bm-tip"></div>
+</section>
+
+<section id="journal" class="overlay hidden">
+  <div class="j-head">
+    <div>
+      <h2>Field journal</h2>
+      <p class="muted"><b id="j-found">0</b> of <b id="j-total">0</b> species identified · <span id="j-trees">0</span> trees inspected</p>
+    </div>
+    <div class="j-tabs"><button data-f="all" class="on">All</button><button data-f="found">Identified</button><button data-f="todo">Not yet</button></div>
+    <input id="j-search" placeholder="Filter…" />
+  </div>
+  <div id="j-grid"></div>
+  <button class="close" data-close>Close <kbd>J</kbd></button>
+</section>
+
+<section id="search" class="overlay hidden">
+  <div class="s-box">
+    <input id="s-input" placeholder="Search a tree: ‘ginkgo’, ‘Quercus’, ‘cherry’…" autocomplete="off" />
+    <div id="s-results"></div>
+    <p class="muted s-foot">Tracking lights every tree of that species in the world and on the map, and points your compass to the nearest one.</p>
+  </div>
+</section>
+
+<section id="settings" class="overlay hidden">
+  <div class="panel">
+    <h2>Settings</h2>
+    <label>Light</label><div class="seg" id="set-sky"></div>
+    <label>Season</label><div class="seg" id="set-season"></div>
+    <label>Draw distance</label><div class="seg" id="set-dist"></div>
+    <label>Music</label><div class="seg" id="set-music"></div>
+    <label>Buildings</label><div class="seg" id="set-bld"></div>
+    <label>This device</label><p class="muted" id="set-device" style="margin:2px 0 0;font-size:13px"></p>
+    <label class="no-touch">Mouse</label><div class="seg no-touch" id="set-look"></div>
+    <label id="set-sens-label">Mouse sensitivity</label><input type="range" id="set-sens" min="0.4" max="2" step="0.05" value="1" />
+    <button class="close" data-close>Done</button>
+  </div>
+</section>
+
+<section id="help" class="overlay hidden">
+  <div class="panel">
+    <h2>Getting around</h2>
+    <dl class="keys">
+      <dt><kbd>W A S D</kbd></dt><dd>Walk</dd>
+      <dt><kbd>Shift</kbd></dt><dd>Hurry (about bicycle speed)</dd>
+      <dt><kbd>Space</kbd></dt><dd>Jump · rise while flying</dd>
+      <dt><kbd>F</kbd></dt><dd>Toggle drone flight</dd>
+      <dt><kbd>Drag</kbd></dt><dd>Look around</dd>
+      <dt><kbd>Click</kbd></dt><dd>Inspect the tree under the cursor</dd>
+      <dt><kbd>M</kbd></dt><dd>Field map &amp; fast travel</dd>
+      <dt><kbd>J</kbd></dt><dd>Field journal</dd>
+      <dt><kbd>/</kbd></dt><dd>Search &amp; track a species</dd>
+      <dt><kbd>T</kbd></dt><dd>Change the light</dd>
+      <dt><kbd>X</kbd></dt><dd>Close the tree card</dd>
+      <dt><kbd>Esc</kbd></dt><dd>Close what's open, otherwise open the map</dd>
+    </dl>
+    <p class="muted">On a phone: drag the left side to walk, the right side to look, and tap a tree.</p>
+    <p class="muted small">Street trees: San Francisco Public Works Street Tree List (DataSF), updated daily. Streets, paths, buildings and parks: © OpenStreetMap contributors (heights where mapped, otherwise estimated). Elevation: City of San Francisco 5-ft elevation contours. Trees in the Presidio, Golden Gate Park and other park forests are not in the city survey; they are approximate stands, modelled from each park's documented plantings and marked as such.</p>
+    <button class="close" data-close>Close</button>
+  </div>
+</section>
+
+<div id="joy"><i id="joyKnob"></i></div>
+<div id="fade"></div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
