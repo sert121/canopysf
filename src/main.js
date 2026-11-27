@@ -161,7 +161,7 @@ async function boot() {
     try { await renderer.compileAsync(scene, camera) } catch (e) { console.warn(e) }
     scene.remove(warm[0]); selRing.visible = false
   }
-  $('#t-prog').style.width = '100%'; $('#t-status').textContent = `${fmt(D.trees.n)} trees · ${fmt(getCatalogue().length)} species`
+  $('#t-prog').style.width = '100%'; { const nS = D.species.reduce((a, s) => a + s.n, 0); $('#t-status').textContent = `${fmt(nS)} street trees + ${fmt(D.trees.n - nS)} approximate park trees · ${fmt(getCatalogue().length)} species` }
   $('#t-walk').disabled = false; $('#t-fly').disabled = false; $('#t-map').disabled = false
   $('#t-walk').onclick = () => enter('walk'); $('#t-fly').onclick = () => enter('fly'); $('#t-map').onclick = () => { enter('walk'); openOverlay('bigmap') }
   if (qs.has('play')) enter(qs.get('play') === 'fly' ? 'fly' : 'walk')
