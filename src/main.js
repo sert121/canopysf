@@ -141,7 +141,6 @@ async function boot() {
   setWalkHandler(i => walkToTree(i)); setFlyHandler(i => flyAboveTree(i))
   initJournal(); initSearch(onSearchPick); setTrackHandler(sp => { const e = getCatalogue().find(e => e.sps.includes(sp)); if (e) trackEntry(e, mapIsOpen()) })
   buildCompass(); initSettings(); bindUI()
-  $('#t-count').textContent = fmt(D.species.reduce((a, s) => a + s.n, 0))
   // title camera: hovering above the start, looking west into the light
   const sx = (START.lon - D.world.lon0) * D.world.mlon, sy = (START.lat - D.world.lat0) * D.world.mlat
   P.x = sx; P.y = sy; P.z = heightAt(sx, sy) + 1.7; P.yaw = START.yaw
