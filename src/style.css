@@ -299,3 +299,6 @@ b, strong, h1, h2, h3, .c-name, #where-nh, .mm-n, .toast b, .jt b { font-family:
   background: rgba(24, 22, 28, .62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); text-shadow: 0 1px 2px rgba(0,0,0,.5); pointer-events: auto }
 #hint kbd { background: rgba(255, 248, 236, .92); color: #1f1b17; border: 0; font-weight: 600; text-shadow: none; padding: 1px 7px }
 #hint:hover { opacity: 1 !important }
+/* title wordmark: room for the descender of the y (gradient text clips to the line box) */
+.t-word { font-size: clamp(60px, 10vw, 128px); line-height: 1.08; padding: 0 .04em .14em 0; margin: 4px 0 0; display: inline-block }
+@media (max-height: 520px) { .t-word { font-size: 56px } }
